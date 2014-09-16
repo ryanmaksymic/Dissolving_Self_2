@@ -29,7 +29,7 @@
 void setup()
 {
   // initialize the serial communication:
-  Serial.begin(9600);
+  Serial.begin(115200);
 }
 
 void loop()
@@ -39,6 +39,6 @@ void loop()
 
   // wait a bit for the analog-to-digital converter 
   // to stabilize after the last reading:
-  delay(2);
+  delay(20);
 }
 
