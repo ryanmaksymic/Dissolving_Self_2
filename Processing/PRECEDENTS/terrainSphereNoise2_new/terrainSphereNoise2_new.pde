@@ -42,16 +42,19 @@ void initialize()
 {
   int myX, myY, myZ;
   tabNoise = new myVector[NB_POINTS];
+
   for (int i = 1; i < NB_POINTS; ++i)
   {
     float longitude = GOLDEN_ANGLE*i;
     longitude /= TWO_PI; 
     longitude -= floor(longitude);
     longitude *= TWO_PI;
+
     if (longitude > PI) 
     {
       longitude -= TWO_PI;
     }
+
     float latitude = asin(-1 + 2*i/(float)NB_POINTS);
 
     myX = (int)(NOISE_SPHERE_RADIUS * cos(latitude) * cos(longitude));
@@ -63,6 +66,7 @@ void initialize()
     tabNoise[i].longitude = longitude;
   }
 }
+
 
 void draw()
 {
@@ -82,22 +86,23 @@ void draw()
   float myX, myY, myZ;
   float myAlpha = 255;
   myVector prevPoint = new myVector(0, 0, 0);
+
   for (int i = 1; i < NB_POINTS; ++i)
   {
     n = noise(tabNoise[i].x/noiseFreqX+noiseX, tabNoise[i].y/noiseFreqY+noiseY, tabNoise[i].z/noiseFreqZ+noiseZ);
-/*
-    if (sin(tabNoise[i].longitude + rotateY) < 0)
-      //if(cos(tabNoise[i].latitude) > 0)
-    {
-      myAlpha = 255;
-      stroke(n*255, 255-n*255, 255-n*255, myAlpha);
-    }
-    else
-    {
-      myAlpha = 150;
-      stroke(255, myAlpha);
-    }
-    */
+    /*
+    //if (sin(tabNoise[i].longitude + rotateY) < 0)
+     if(cos(tabNoise[i].latitude) > 0)
+     {
+     myAlpha = 255;
+     stroke(n*255, 255-n*255, 255-n*255, myAlpha);
+     }
+     else
+     {
+     myAlpha = 150;
+     stroke(255, myAlpha);
+     }
+     */
     stroke(n*255, 255-n*255, 255-n*255, 255);
 
     pushMatrix();
@@ -107,6 +112,7 @@ void draw()
     popMatrix();
   }
 }
+
 
 void mousePressed()
 {
@@ -122,9 +128,11 @@ void mousePressed()
 
 class myVector extends PVector
 {
-  myVector (float p_x, float p_y, float p_h) {
+  myVector (float p_x, float p_y, float p_h)
+  {
     super(p_x, p_y, p_h);
   }
+
   float longitude;
   float latitude;
 }

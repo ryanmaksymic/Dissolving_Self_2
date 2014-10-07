@@ -29,8 +29,10 @@ void draw()
   background(0);
   translate(width/2, height/2, 0);    // center the shape in the canvas
 
-  rotateY(rotateVal);    // rotate shape about Y-axis
-  
+  rotateY(rotateVal);    // rotate shape about y-axis
+
+  rotateZ(radians(5));    // a slight swivel about the z-axis
+
   dotAlpha = 255;
 
   for (int j = 0; j < numDivisions*12; j++)
@@ -47,11 +49,9 @@ void draw()
       //stroke(angle*i, 100, 100);
       point(x1, y1, 0);
     }
-    
+
     dotAlpha -= 1;
   }
-
-  //angle_1 = angle_1 + radians(0.01);
 
   rotateVal += radians(2);    // update rotation value
 }

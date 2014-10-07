@@ -26,16 +26,19 @@
  http://www.arduino.cc/en/Tutorial/Graph
  */
 
+int var = 0;
+
 void setup()
 {
   // initialize the serial communication:
-  Serial.begin(115200);
+  Serial.begin(57600);
 }
 
 void loop()
 {
   // send the value of analog input 0:
-  Serial.println(analogRead(A0));
+  var = map(analogRead(A5), 700, 1000, 0, 100);
+  Serial.println(var);
 
   // wait a bit for the analog-to-digital converter 
   // to stabilize after the last reading:
