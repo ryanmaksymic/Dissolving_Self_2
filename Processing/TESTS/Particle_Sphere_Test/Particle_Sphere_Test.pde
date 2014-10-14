@@ -1,6 +1,6 @@
 /*
 
- Dissolving Self 2
+ Particle Sphere Test
  
  Ryan Maksymic
  
@@ -26,16 +26,11 @@
  */
 
 
-import processing.serial.*;
-Serial myPort;
-
-float speed = 0;
-
 Particle[] part;    // particle objects
 
 Orb orb;    // orb object
 
-int num = 1000;    // number of particles in the system
+int num = 600;    // number of particles in the system
 
 color pCol = color(255, 155, 5);    // uncomment for orange colour
 //color pCol = color(25, 255, 255);    // uncomment for blue colour
@@ -81,21 +76,16 @@ void setup()
      */
 
 
-    part[i] = new Particle(330, PI*random(0.02, 0.98), 2*PI*random(1));    // enable for random particle distribution
+    //part[i] = new Particle(330, PI*random(0.02, 0.98), 2*PI*random(1));    // enable for random particle distribution
 
     // enable for wavy ring
     //float waveVal = 2*PI*random(1);
     //part[i] = new Particle(330, PI/2 + cos(10*waveVal)/20, waveVal);
 
-    //part[i] = new Particle(330, PI*random(0.49, 0.51), 2*PI*random(1));    // enable for particle belt
+    part[i] = new Particle(330, PI*random(0.49, 0.51), 2*PI*random(1));    // enable for particle belt
 
     //part[i] = new Particle(300, thetaLevel, 2*PI*random(1));    // enable for discrete vertical levels
   }
-
-  // serial communication setup
-  println(Serial.list());
-  myPort = new Serial(this, Serial.list()[7], 9600);
-  myPort.bufferUntil('\n');
 }
 
 
@@ -110,8 +100,8 @@ void draw()
 
   for (int j = 0; j < num; j++)    // update and display each particle
   {
-    part[j].update(speed);
-    //part[j].updateFalling(j);
+    //part[j].update(j);
+    part[j].updateFalling(j);
     //part[j].updateSwirling(j);
     //part[j].updateWavy();
 
@@ -119,12 +109,8 @@ void draw()
   }
 
   // enable for gradual change in motion upon key press
-  /*
   if (moving == true)
-   {
-   moveIndex += 4;    // adjusts rate of change
-   }
-   */
+    moveIndex += 4;    // adjusts rate of change
 
   camera(width/2.0, height*0.6, (height/2.0) / tan(PI*30.0 / 180.0), width/2.0, height/2.0, 0, 0, 1, 0);    // angle camera view upward
 }

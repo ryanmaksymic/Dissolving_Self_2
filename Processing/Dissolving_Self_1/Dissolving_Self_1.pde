@@ -1,6 +1,6 @@
 /*
 
- Dissolving Self
+ Dissolving Self 1
  
  Created on April 4, 2013
  
@@ -120,9 +120,7 @@ void draw()
     {
       e[i].draw();
     }
-  }
-
-  else
+  } else
   {
     background(0);
     camera(width/2.0, height/2.0, (height/2.0) / tan(PI*30.0 / 180.0), width/2.0, height/2.0, 0, 0, 1, 0);    // reset camera
@@ -136,8 +134,7 @@ void draw()
       }
       tint(255, alpha1);
       image(logo, 0, 0);
-    }
-    else if (endState == 2)    // fade out of logo and in to credits
+    } else if (endState == 2)    // fade out of logo and in to credits
     {
       alpha1--;
       if (alpha1 < 1)

@@ -29,7 +29,7 @@ void setup()
   println(Serial.list()); 
 
   // open the port that the Arduino board is connected to
-  port = new Serial(this, Serial.list()[7], 9600);
+  port = new Serial(this, Serial.list()[7], 38400);
 }
 
 

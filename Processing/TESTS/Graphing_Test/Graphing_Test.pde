@@ -1,5 +1,4 @@
-// Graphing sketch
-
+// Graphing Test
 
 // This program takes ASCII-encoded strings
 // from the serial port at 9600 baud and graphs them. It expects values in the
@@ -10,10 +9,12 @@
 // by Tom Igoe
 // This example code is in the public domain.
 
+
 import processing.serial.*;
 
 Serial myPort;        // The serial port
 int xPos = 1;         // horizontal position of the graph
+
 
 void setup ()
 {
@@ -32,10 +33,12 @@ void setup ()
   background(0);
 }
 
+
 void draw ()
 {
   // everything happens in the serialEvent()
 }
+
 
 void serialEvent (Serial myPort)
 {
@@ -48,7 +51,8 @@ void serialEvent (Serial myPort)
     inString = trim(inString);
     // convert to an int and map to the screen height:
     float inByte = float(inString); 
-    inByte = map(inByte, -150, 150, 0, height);    // input range was adjusted here to work with SoMo
+    inByte = map(inByte, 0, 1023, 0, height);    // input range was adjusted here to work with SoMo
+    println(inByte);
 
     // draw the line:
     stroke(127, 34, 255);
@@ -59,8 +63,7 @@ void serialEvent (Serial myPort)
     {
       xPos = 0;
       background(0);
-    } 
-    else
+    } else
     {
       // increment the horizontal position:
       xPos++;

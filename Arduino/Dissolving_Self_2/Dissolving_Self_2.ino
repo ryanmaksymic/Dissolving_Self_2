@@ -30,24 +30,23 @@ int16_t mx, my, mz;
 
 SoftwareSerial mySerial(MOSI, 4);    // RX, TX
 
-// EL wire control pins
-int ELpin = 8;
+int incomingByte;        // a variable to read incoming serial data into
+
+int ELpin = 8;    // EL wire control pin
 
 
 void setup()
 {
-  Wire.begin();
-  Serial.begin(38400);    // serial monitor
-
-  // initialize device
-  Serial.println("Initializing I2C devices...");
-  accelgyro.initialize();
-
-  // verify connection
-  Serial.println("Testing device connections...");
-  Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
-
+  Serial.begin(9600);    // serial monitor
   mySerial.begin(9600);    // XBee communication
+
+  Wire.begin();
+
+  accelgyro.initialize();    // initialize device
+
+    Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");    // verify connection
+
+    pinMode(ELpin, OUTPUT);
 
   // NOTE: I'm not sure what this stuff is about:
   //  for (int i = 2; i < 14; i++)
@@ -72,56 +71,29 @@ void loop()
 
   // scale and print gyro val
   gz = map(gz, -32800, 32800, 0, 1023);
-  Serial.println(gz);
+  //Serial.println(gz);
   mySerial.println(gz);
 
-  // test: quick rotation illuminates EL wire
-  if (gz > 923  || gz < 100)
+  // see if there's incoming serial data:
+  if (mySerial.available() > 0)
+    //if (Serial.available() > 0)
   {
-    digitalWrite(ELpin, HIGH);
-  }
-  else
-  {
-    digitalWrite(ELpin, LOW);
+    // read the oldest byte in the serial buffer
+    incomingByte = mySerial.read();
+    //incomingByte = Serial.read();
+
+    // if it's a capital H (ASCII 72), turn on the LED
+    if (incomingByte == 'H')
+    {
+      digitalWrite(ELpin, HIGH);
+    } 
+    // if it's an L (ASCII 76), turn off the LED
+    if (incomingByte == 'L')
+    {
+      digitalWrite(ELpin, LOW);
+    }
   }
 
   delay(10);    // wait 10 ms
-}
-
-
-//////// FUNCTIONS ////////
-
-// scale the inputs
-int ScaleMAX(int raw)
-{
-  float temp = Scale(raw, -16000, 16000);
-
-  return temp*1024;
-}
-
-
-// scale the inputs for magnetometer only
-int ScaleMAX_mag(int raw)
-{
-  float temp = Scale(raw, -32000, 32000);
-
-  return temp*1024;
-}
-
-
-// scale one of the inputs to between 0.0 and 1.0
-// NOTE: What's this "zero-offset" stuff? 
-float Scale(long in, long smin, long smax)
-{
-  // bound
-  if (in > smax) in=smax;
-  if (in < smin) in=smin;
-
-  // change zero-offset
-  in = in-smin;
-
-  // scale between 0.0 and 1.0 (0.5 would be halfway)
-  float temp = (float)in/((float)smax-(float)smin);
-  return temp;
 }
 
