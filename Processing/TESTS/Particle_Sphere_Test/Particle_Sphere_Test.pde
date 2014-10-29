@@ -76,13 +76,13 @@ void setup()
      */
 
 
-    //part[i] = new Particle(330, PI*random(0.02, 0.98), 2*PI*random(1));    // enable for random particle distribution
+    part[i] = new Particle(330, PI*random(0.02, 0.98), 2*PI*random(1));    // enable for random particle distribution
 
     // enable for wavy ring
     //float waveVal = 2*PI*random(1);
     //part[i] = new Particle(330, PI/2 + cos(10*waveVal)/20, waveVal);
 
-    part[i] = new Particle(330, PI*random(0.49, 0.51), 2*PI*random(1));    // enable for particle belt
+    //part[i] = new Particle(330, PI*random(0.49, 0.51), 2*PI*random(1));    // enable for particle belt
 
     //part[i] = new Particle(300, thetaLevel, 2*PI*random(1));    // enable for discrete vertical levels
   }

@@ -19,14 +19,14 @@ int xPos = 1;         // horizontal position of the graph
 void setup ()
 {
   // set the window size:
-  size(400, 300);        
+  size(800, 600);        
 
   // List all the available serial ports
   println(Serial.list());
   // I know that the first port in the serial list on my mac
   // is always my  Arduino, so I open Serial.list()[0].
   // Open whatever port is the one you're using.
-  myPort = new Serial(this, Serial.list()[7], 38400);    // baud rate was adjusted here to work with SoMo
+  myPort = new Serial(this, Serial.list()[7], 9600);    // baud rate was adjusted here to work with SoMo
   // don't generate a serialEvent() unless you get a newline character:
   myPort.bufferUntil('\n');
   // set inital background:
@@ -51,7 +51,7 @@ void serialEvent (Serial myPort)
     inString = trim(inString);
     // convert to an int and map to the screen height:
     float inByte = float(inString); 
-    inByte = map(inByte, 0, 1023, 0, height);    // input range was adjusted here to work with SoMo
+    inByte = map(inByte, -16000, 16000, 0, height);    // input range was adjusted here to work with SoMo
     println(inByte);
 
     // draw the line:

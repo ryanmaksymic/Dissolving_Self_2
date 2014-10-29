@@ -3,181 +3,122 @@
 
 class Particle
 {
-  color col;    // particle's color
   float size;    // particle's size
-  float r, theta, phi;    // particle's spherical coordinates
-  float x, y, z;    // particle's cartesian coordinates
-  float xPrev, yPrev, zPrev;    // particle's cartesian coordinates in the last frame
-  float phiDelta;    // particle's rotation speed
-  float thetaDelta;    // particles vertical movement speed
+  PVector pos;    // particle's cartesian coordinate vector
+  PVector posSphere;    // particle's spherical coordinate vector
+  float radius;    // particle's radius location
+  float rotSpeed;    // particle's rotation speed
+  float swirlSpeed;    // particle's swirl speed
+  PVector dest;    // cartesian coordinate vector for particle's destination
+  PVector vel;    // particle's velocity vector
+  color col;    // particle's color
+  float alpha;    // particle's transparency
 
 
-  Particle(float r_, float theta_, float phi_)
+  Particle(float r_, float theta_, float phi_, color col_, float size_, float rotSpeed_)
   {
-    col = pCol;
-    // enable to make particles half-colour/half-white
-    /*
-    if (random(1) > 0.5)
-     col = pCol;
-     else
-     col = color(255);
-     */
+    //size = random(0.5, 8);    // set particle size range
+    size = size_;
 
-    size = 6;
+    radius = r_;
 
-    r = r_;
-    theta = theta_;
-    phi = phi_;
+    posSphere = new PVector(r_, theta_, phi_);    // set spherical coordinates
 
-    //phiDelta = random(0.25, 0.75);    // randomly pick a rotation speed
-    phiDelta = 0.2;    // enable for coherent rotational movement
+    pos = new PVector(posSphere.x * sin(posSphere.y) * sin(posSphere.z), posSphere.x * cos(posSphere.y), posSphere.x * sin(posSphere.y) * cos(posSphere.z));    // calculate cartesian coords based on spherical coords
 
-    thetaDelta = random(-0.7, 0.7);    // randomly pick a vertical movement speed
-    //thetaDelta = 0.003;    // enable for coherent vertical movement
+    //rotSpeed = random(0.1, 2.0);    // set rotation speed range
+    rotSpeed = rotSpeed_;
 
-    // calculate cartesian coords based on spherical coords
-    x = r * sin(theta) * sin(phi);
-    y = r * cos(theta);
-    z = r * sin(theta) * cos(phi);
+    swirlSpeed = 0;
 
-    xPrev = x;
-    yPrev = y;
-    zPrev = z;
+    dest = new PVector(0, 0, 0);    // initialize particle destinationu
+
+    vel = new PVector(0, 0, 0);    // initialize particle velocity
+
+    col = col_;    // set particle colour
+
+    alpha = map(pos.z, -300, 300, 255, 50);    // more distant particles are more faint
   }
 
 
-  void update(float speed_)    // update locations of particles
+  void goTo(float tranSpeed_, float r_, float theta_)    // set new particle destination and transition speed
   {
-    xPrev = x;
-    yPrev = y;
-    zPrev = z;
+    radius = r_;
 
-    phi += radians(phiDelta + speed_);    // rotate sphere
+    dest.set(r_, theta_, posSphere.z);    // set particle destination
 
-    x = r * sin(theta) * sin(phi);
-    z = r * sin(theta) * cos(phi);
-    y = r * cos(theta);
+    vel = PVector.sub(dest, posSphere);    // calculate required particle velocity
+    vel.div(tranSpeed_);    // adjust transition speed
   }
 
-  void updateSwirling(int j_)    // update locations of particles
+  void goTo(float tranSpeed_, float r_, float theta_, float rotSpeed_, float swirlSpeed_)    // set new particle destination and transition speed
   {
-    xPrev = x;
-    yPrev = y;
-    zPrev = z;
+    swirlSpeed = swirlSpeed_;
 
-    phi += radians(phiDelta);    // rotate sphere
+    rotSpeed = rotSpeed_;
 
-    if (moving == true && j_ < moveIndex)    // theta value depends on moving condition
-      theta += radians(thetaDelta);
-
-    x = r * sin(theta) * sin(phi);
-    z = r * sin(theta) * cos(phi);
-    y = r * cos(theta);
+    goTo(tranSpeed_, r_, theta_);
   }
 
-  void updateWavy()    // update locations of particles
+
+  void update()    // update particle locations and draw particles
   {
-    xPrev = x;
-    yPrev = y;
-    zPrev = z;
-
-    phi += radians(phiDelta);    // rotate sphere
-
-    if (theta > PI * 0.52)
-      thetaDelta *= -1;
-    if (theta < PI * 0.48)
-      thetaDelta *= -1;
-
-    theta += thetaDelta;
-
-    x = r * sin(theta) * sin(phi);
-    z = r * sin(theta) * cos(phi);
-    y = r * cos(theta);
+    if (PVector.dist(dest, posSphere) < 0.01)    // if particle has arrived at destination
+    {
+      vel.set(0, 0, 0);    // zero velocity
+    } else
+    {
+      posSphere.add(vel);    // update particle location
+    }
   }
 
-  void updateFalling(int j_)    // update locations of particles
+
+  void move(boolean gyroOn_, float somoVal_, float camXmod_)
   {
-    xPrev = x;
-    yPrev = y;
-    zPrev = z;
+    posSphere.z += radians(rotSpeed);    // rotate current position
+    dest.z += radians(rotSpeed);    // rotate destination
 
-    phi += radians(phiDelta);    // rotate sphere
+    if (swirlSpeed != 0)
+    {
+      posSphere.y += radians(swirlSpeed + abs(camXmod_)/2);
+      dest.y += radians(swirlSpeed + abs(camXmod_)/2);
+    }
 
-    x = r * sin(theta) * sin(phi);
-    z = r * sin(theta) * cos(phi);
+    if (gyroOn_)
+    {
+      // SoMo influence: rotation speed
+      posSphere.z += radians(somoVal_);
+      dest.z += radians(somoVal_);
 
-    if (moving == true && j_ < moveIndex)    // y value depends on moving condition
-      y += 2;
+      // SoMo influence: radius
+      float radMod = random(0.5, 3);
+      posSphere.x += abs(somoVal_ * radMod);
+      dest.x += abs(somoVal_ * radMod);
+
+      // keep radius shrinking to limit
+      if (posSphere.x > radius)
+      {
+        posSphere.x -= 4;
+        dest.x -= 4;
+      }
+    }
+  }
+
+
+  void display(boolean fading_)
+  {
+    pos.set(posSphere.x * sin(posSphere.y) * sin(posSphere.z), posSphere.x * cos(posSphere.y), posSphere.x * sin(posSphere.y) * cos(posSphere.z));    // calculate cartesian coords based on spherical coords
+
+    strokeWeight(size);    // set particle size /
+
+    if (fading_)
+      alpha -= 0.5;
     else
-      y = r * cos(theta);
-  }
+      alpha = map(pos.z, 200, -300, 255, 20);    // calculate particle transparency based on its distance
 
-  void display()    // display a particle in its current position; display its glow in its previous position
-  {
-    strokeWeight(size);
-    stroke(col, 255);
-    point(x, y, z);
+    stroke(col, alpha);    // set particle colour and transparency
 
-    strokeWeight(size * 1.5);
-    stroke(col, 70);
-    point(xPrev, yPrev, zPrev);
-    strokeWeight(size * 1.6);
-    stroke(col, 60);
-    point(xPrev, yPrev, zPrev);
-
-    strokeWeight(size * 2);
-    stroke(col, 25);
-    point(xPrev, yPrev, zPrev);
-    strokeWeight(size * 2.2);
-    stroke(col, 20);
-    point(xPrev, yPrev, zPrev);
-  }
-}
-
-
-class Orb
-{
-  color col;    // orb's color
-  float size;    // orb's size
-  float x, y, z;    // orb's cartesian coordinates
-  float xPrev, yPrev, zPrev;    // orb's cartesian coordinates in the last frame
-
-
-  Orb()
-  {
-    col = color(250);
-
-    size = 210;
-
-    x = 0;
-    y = 0;
-    z = 0;
-
-    xPrev = x;
-    yPrev = y;
-    zPrev = z;
-  }
-
-
-  void display()    // display an orb in its current position; display its glow in its previous position
-  {
-    strokeWeight(size);
-    stroke(col, 255);
-    point(x, y, z);
-
-    strokeWeight(size * 1.2);
-    stroke(col, 70);
-    point(xPrev, yPrev, zPrev);
-    strokeWeight(size * 1.25);
-    stroke(col, 60);
-    point(xPrev, yPrev, zPrev);
-
-    strokeWeight(size * 1.4);
-    stroke(col, 25);
-    point(xPrev, yPrev, zPrev);
-    strokeWeight(size * 1.5);
-    stroke(col, 20);
-    point(xPrev, yPrev, zPrev);
+    point(pos.x, pos.y, pos.z);    // draw particle
   }
 }
 

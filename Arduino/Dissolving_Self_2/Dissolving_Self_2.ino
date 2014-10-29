@@ -2,14 +2,11 @@
 
  Dissolving Self 2
  
- This is the final thing.
+ Sends motion data to Processing. Receives commands from Processing to turn EL wire on and off.
  
  Ryan Maksymic
  
  Created on October 2, 2014
- 
- Modified on:
- * October 6, 2014
  
  References:
  * 
@@ -34,6 +31,8 @@ int incomingByte;        // a variable to read incoming serial data into
 
 int ELpin = 8;    // EL wire control pin
 
+char mode = ' ';    // a = accelerometer; g = gyroscope
+
 
 void setup()
 {
@@ -42,11 +41,11 @@ void setup()
 
   Wire.begin();
 
-  accelgyro.initialize();    // initialize device
+  accelgyro.initialize();    // initialize device /
 
-    Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");    // verify connection
+  Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");    // verify connection /
 
-    pinMode(ELpin, OUTPUT);
+  pinMode(ELpin, OUTPUT);
 
   // NOTE: I'm not sure what this stuff is about:
   //  for (int i = 2; i < 14; i++)
@@ -66,34 +65,57 @@ void setup()
 
 void loop()
 {
-  // read raw accel/gyro measurements from device
-  accelgyro.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
-
-  // scale and print gyro val
-  gz = map(gz, -32800, 32800, 0, 1023);
-  //Serial.println(gz);
-  mySerial.println(gz);
+  // INPUTS
 
   // see if there's incoming serial data:
   if (mySerial.available() > 0)
-    //if (Serial.available() > 0)
   {
     // read the oldest byte in the serial buffer
     incomingByte = mySerial.read();
-    //incomingByte = Serial.read();
 
-    // if it's a capital H (ASCII 72), turn on the LED
-    if (incomingByte == 'H')
+    // turn accelerometer on
+    if (incomingByte == 'a')
+    {
+      mode = 'a';
+    }
+    // turn gyroscope on
+    if (incomingByte == 'g')
+    {
+      mode = 'g';
+    }
+
+    // turn EL wire on
+    if (incomingByte == 'h')
     {
       digitalWrite(ELpin, HIGH);
     } 
-    // if it's an L (ASCII 76), turn off the LED
-    if (incomingByte == 'L')
+    // turn EL wire off
+    if (incomingByte == 'l')
     {
       digitalWrite(ELpin, LOW);
     }
   }
 
-  delay(10);    // wait 10 ms
+
+  // OUTPUTS
+
+  // read raw accel/gyro measurements from device
+  accelgyro.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
+
+  // scale and print accelerometer value
+  if (mode == 'a')
+  {
+    ax = map(ax, -32800, 32800, -1000, 1000);
+    mySerial.println(ax);
+  }
+  // scale and print gyrocsope value
+  else if (mode == 'g')
+  {
+    gz = map(gz, -32800, 32800, -1000, 1000);
+    mySerial.println(gz);
+  }
+
+
+  delay(5);    // wait 10 ms
 }
 

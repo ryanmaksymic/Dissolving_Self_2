@@ -6,12 +6,6 @@
  
  Created on September 26, 2014
  
- Modified on:
- * October 5, 2014
- * October 10, 2014
- * October 13, 2014
- * 
- 
  References:
  * http://www.processing.org/tutorials/objects/
  * http://processing.org/examples/simpleparticlesystem.html
@@ -20,112 +14,237 @@
  * http://en.wikipedia.org/wiki/Spherical_coordinate_system
  
  To do:
- * Set up verticle position levels
- * 
+ * Overall:
+ - Add shooting stars (?)
+ * Curiosity:
+ - Add pulsating radii (?)
+ * Interplay:
+ - Quick EL wire flicker with each quick spin (?)
+ - Shooting stars with each lateral movement (?)
+ * Embrace:
+ - 
  
  */
 
 
+// open serial communication
 import processing.serial.*;
 Serial myPort;
 
-float speed = 0;
+// connect syphon
+import codeanticode.syphon.*;
+SyphonServer server;
 
-Particle[] part;    // particle objects
+int numSky = 300;    // number of group 0 particles
+int numBall = 1000;    // number of group 1 & 2 particles
 
-Orb orb;    // orb object
+Particle[] part0, part1, part2;    // particle groups 0, 1, & 2
 
-int num = 1000;    // number of particles in the system
+color col2 = color(0, 255, 200);    // group 2 colour: blue
+//color col2 = color(255, 155, 5);    // group 2 colour: orange
 
-color pCol = color(255, 155, 5);    // uncomment for orange colour
-//color pCol = color(25, 255, 255);    // uncomment for blue colour
+char mode = ' ';    // particle orientation mode
 
-boolean moving = false;
-//int moveIndex = num + 1;
-int moveIndex = 1;    // enable for gradual change in motion upon key press
+int colourIndex = -1;    // how many colour particles have been introduced
+
+boolean gyroOn = false;    // true = receiving SoMo gyroscope data
+
+int radius0 = 600;    // group 0 sphere radius
+int radius1 = 150;    // group 1 sphere radius
+int radius2 = 300;    // group 2 sphere radius
+
+float somoVal = 0;    // gyroscope data from SoMo
+
+float camX, camY;    // camera focal point
+char camDest = 'C';    // L, R, C, U, or D
+
+// camera focal point movement velocities
+float camXmod = 0;
+float camYmod = 0;
+
+boolean fading = false;
 
 
 void setup()
 {
-  size(1200, 800, P3D);
-  noCursor();
+  size(1500, 900, P3D);    // laptop size
+  //size(1900, 1200, P3D);    // projector size (?)
 
-  part = new Particle[num];    // array of particles
+  noCursor();    // hide mouse
 
-  orb = new Orb();    // orb
+  // set camera focal point
+  camX = width/2;
+  camY = height/2;
 
-    for (int i = 0; i < num; i++)
+  part0 = new Particle[numSky];    // particle group 0
+  part1 = new Particle[numBall];    // particle group 1
+  part2 = new Particle[numBall];    // particle group 2
+
+  // Particle(radius, theta, phi, colour, size, rotSpeed)
+
+  for (int i = 0; i < numSky; i++)    // create group 0 particles
   {
-    // enable for discrete vertical levels
-    /*
-    float thetaLevel = 0;
-     
-     if (i < num * 0.1)
-     thetaLevel = PI * 0.1;
-     else if (i < num * 0.2)
-     thetaLevel = PI * 0.2;
-     else if (i < num * 0.3)
-     thetaLevel = PI * 0.3;
-     else if (i < num * 0.4)
-     thetaLevel = PI * 0.4;
-     else if (i < num * 0.5)
-     thetaLevel = PI * 0.5;
-     else if (i < num * 0.6)
-     thetaLevel = PI * 0.6;
-     else if (i < num * 0.7)
-     thetaLevel = PI * 0.7;
-     else if (i < num * 0.8)
-     thetaLevel = PI * 0.8;
-     else
-     thetaLevel = PI * 0.9;
-     */
-
-
-    part[i] = new Particle(330, PI*random(0.02, 0.98), 2*PI*random(1));    // enable for random particle distribution
-
-    // enable for wavy ring
-    //float waveVal = 2*PI*random(1);
-    //part[i] = new Particle(330, PI/2 + cos(10*waveVal)/20, waveVal);
-
-    //part[i] = new Particle(330, PI*random(0.49, 0.51), 2*PI*random(1));    // enable for particle belt
-
-    //part[i] = new Particle(300, thetaLevel, 2*PI*random(1));    // enable for discrete vertical levels
+    part0[i] = new Particle(600, PI, 2*PI*random(1), 255, random(0.1, 3), random(-0.02, 0.02));    // offscreen - group 0
   }
 
-  // serial communication setup
+  for (int i = 0; i < numBall; i++)    // create group 1 & 2 particles
+  {
+    part1[i] = new Particle(600, PI, 2*PI*random(1), 255, random(0.3, 5), random(-0.02, 0.02));    // offscreen  - group 1
+    part2[i] = new Particle(600, 0, 2*PI*random(1), col2, random(0.8, 8), random(-3, 3));    // offscreen - group 2
+  }
+
+  // set up serial communication
   println(Serial.list());
   myPort = new Serial(this, Serial.list()[7], 9600);
   myPort.bufferUntil('\n');
+
+  //server = new SyphonServer(this, "Processing Syphon");    // create syphon server
+
+  println("Setup complete");
 }
 
 
 void draw()
 {
   background(0);
-  //lights();    // does this do anything?
 
-  translate(width/2, height/2, 0);    // center the origin in the screen
+  translate(width/2, height/2, 0);    // center the origin
 
-  //orb.display();    // display orb
 
-  for (int j = 0; j < num; j++)    // update and display each particle
+  // SET PARTICLE ORIENTATIONS
+
+  switch(mode)    // change in particle orientation depends on current mode
   {
-    part[j].update(speed);
-    //part[j].updateFalling(j);
-    //part[j].updateSwirling(j);
-    //part[j].updateWavy();
+    // goTo(tranSpeed, radius, theta)
+    // goTo(tranSpeed, radius, theta, rotSpeed, swirlSpeed)
 
-    part[j].display();
+    // offscreen mode
+  case '0':
+    for (int j = 0; j < numBall; j++)
+    {
+      part1[j].goTo(1, 600, PI, random(-0.02, 0.02), 0);
+      part2[j].goTo(1, 600, 0, random(-3, 3), 0);    // offscreen - group 2
+    }
+    mode = ' ';
+    break;
+
+    // universe mode
+  case '1':
+    for (int j = 0; j < numSky; j++)
+    {
+      part0[j].goTo(400, random(400, 800), PI*random(1));    // universe - group 0
+    }
+    for (int j = 0; j < numBall; j++)
+    {
+      part1[j].goTo(400, random(60, 2000), PI*random(1));    // universe - group 1
+    }
+    mode = ' ';
+    break;
+
+    // ball mode
+  case '2':
+    for (int j = 0; j < numBall; j++)
+    {
+      part1[j].goTo(250, random(10, radius1), PI*random(0.02, 0.98), random(-1, 1), random(1));    // ball - group 1
+    }
+    mode = ' ';
+    break;
+
+    // colour mode
+  case '3':
+    int colourDiv = 3;    // number of group 2 particle groups
+    if (colourIndex < colourDiv)    // if there are group 2 particles still hidden
+    {
+      for (int j = colourIndex*90/colourDiv; j < (colourIndex + 1)*90/colourDiv; j++)
+      {
+        part2[j].goTo(100, radius2*1.25, PI*random(0.02, 0.98));    // shell - group 2
+      }
+      mode = ' ';
+
+      println("      (" + (colourIndex + 1) + "/" + colourDiv + ")");    // print group 2 release progress
+    }
+    break;
+
+    // shell mode
+  case '4':
+    for (int j = 0; j < numBall; j++)
+    {
+      part1[j].goTo(200, random(10, radius1), PI*random(0.02, 0.98), random(-1, 1), 0);    // shell - group 1
+      part2[j].goTo(200, random(radius2, radius2+10), PI*random(0.02, 0.98));    // shell - group 2
+    }
+    mode = ' ';
+    break;
+
+    // ring mode
+  case '5':
+    for (int j = 0; j < numBall; j++)
+    {
+      // ring - group 1 & 2
+      part1[j].goTo(150, random(radius1, radius1+10), PI*random(0.49, 0.51), random(-1, 1), 0);
+      part2[j].goTo(150, random(radius2, radius2+10), PI*random(0.49, 0.51));
+    }
+    mode = ' ';
+    break;
+
+    // shrink mode
+  case '6':
+    for (int j = 0; j < numBall; j++)
+    {
+      // shrink - group 1 & 2
+      part1[j].goTo(50, 0, PI*random(0.49, 0.51));
+      part2[j].goTo(50, 0, PI*random(0.49, 0.51));
+    }
+    mode = ' ';
+    break;
   }
 
-  // enable for gradual change in motion upon key press
-  /*
-  if (moving == true)
-   {
-   moveIndex += 4;    // adjusts rate of change
-   }
-   */
 
-  camera(width/2.0, height*0.6, (height/2.0) / tan(PI*30.0 / 180.0), width/2.0, height/2.0, 0, 0, 1, 0);    // angle camera view upward
+  // DRAW PARTICLES
+
+  // move(gyroOn, somoVal, camXmod)
+
+  for (int j = 0; j < numSky; j++)    // draw group 0 particles
+  {
+    part0[j].update();
+    part0[j].move(false, 0, 0);
+    part0[j].display(fading);
+  }
+
+  for (int j = 0; j < numBall; j++)    // draw group 1 & 2 particles
+  {
+    part1[j].update();
+    part1[j].move(gyroOn, somoVal/450, camXmod);
+    part1[j].display(fading);
+
+    part2[j].update();
+    part2[j].move(gyroOn, somoVal/300, camXmod);
+    part2[j].display(fading);
+  }
+
+
+  // CAMERA
+
+  // adjust camera focal point movement velocities
+  if (camDest == 'L')
+    camXmod = map(camX, width/2, 0.75*width, 8, 0);
+  if (camDest == 'R')
+    camXmod = map(camX, width/2, 0.25*width, -8, 0);
+  if (camDest == 'C')
+    camXmod = map(camX, 0.25*width, 0.75*width, 8, -8);
+  if (camDest == 'D')
+    camYmod = map(camY, height*0.65, height/2, -1, 0);
+  if (camDest == 'U')
+    camYmod = map(camY, height/2, height*0.65, 1, 0);
+
+  // update camera focal point movement velocities
+  camX += camXmod;
+  camY += camYmod;
+
+  camera(width/2.0, height*0.7, (height/2.0) / tan(PI*30.0 / 180.0), camX, camY, 0, 0, 1, 0);    // key-controlled camera
+  //camera(width/2.0, height*0.7, (height/2.0) / tan(PI*30.0 / 180.0), width - mouseX, height - mouseY, 0, 0, 1, 0);    // mouse-controlled camera
+  //camera(width/2.0, height*0.7, (height/2.0) / tan(PI*30.0 / 180.0), width/2, height*0.65, 0, 0, 1, 0);    // standard camera
+
+
+  //server.sendScreen();    // send frame to syphon
 }
 
