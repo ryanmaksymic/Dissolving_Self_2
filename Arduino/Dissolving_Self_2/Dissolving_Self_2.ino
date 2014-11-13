@@ -8,9 +8,6 @@
  
  Created on October 2, 2014
  
- References:
- * 
- 
  */
 
 
@@ -31,7 +28,8 @@ int incomingByte;        // a variable to read incoming serial data into
 
 int ELpin = 8;    // EL wire control pin
 
-char mode = ' ';    // a = accelerometer; g = gyroscope
+boolean gyroOn = false;    // true = send gyroscope data to Processing
+boolean ELOn = false;    // true = EL wire is illuminated
 
 
 void setup()
@@ -46,76 +44,72 @@ void setup()
   Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");    // verify connection /
 
   pinMode(ELpin, OUTPUT);
-
-  // NOTE: I'm not sure what this stuff is about:
-  //  for (int i = 2; i < 14; i++)
-  //  {
-  //    digitalWrite(i, HIGH);    // enable pullups
-  //  }
-
-  /*
-  while (establishContact()==0)
-   {
-   Serial.println("Waiting for connection from MAX...");
-   delay(100);
-   }  //wait for 99 byte
-   */
 }
 
 
 void loop()
 {
-  // INPUTS
-
   // see if there's incoming serial data:
   if (mySerial.available() > 0)
   {
     // read the oldest byte in the serial buffer
     incomingByte = mySerial.read();
 
-    // turn accelerometer on
-    if (incomingByte == 'a')
-    {
-      mode = 'a';
-    }
     // turn gyroscope on
+    if (incomingByte == 'G')
+    {
+      gyroOn = true;
+    }
+    // turn gyroscope off
     if (incomingByte == 'g')
     {
-      mode = 'g';
+      gyroOn = false;
     }
 
-    // turn EL wire on
-    if (incomingByte == 'h')
+    // flicker EL wire
+    if (incomingByte == 'f')
     {
       digitalWrite(ELpin, HIGH);
-    } 
-    // turn EL wire off
-    if (incomingByte == 'l')
-    {
+      delay(random(60, 80));
+      digitalWrite(ELpin, LOW);
+      delay(random(30, 50));
+      digitalWrite(ELpin, HIGH);
+      delay(random(60, 80));
       digitalWrite(ELpin, LOW);
     }
+    // turn EL wire on
+    if (incomingByte == 'E')
+    {
+      ELOn = true;
+    } 
+    // turn EL wire off
+    if (incomingByte == 'e')
+    {
+      ELOn = false;
+    }
   }
-
-
-  // OUTPUTS
 
   // read raw accel/gyro measurements from device
   accelgyro.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
 
   // scale and print accelerometer value
-  if (mode == 'a')
-  {
-    ax = map(ax, -32800, 32800, -1000, 1000);
-    mySerial.println(ax);
-  }
-  // scale and print gyrocsope value
-  else if (mode == 'g')
+  if (gyroOn)
   {
     gz = map(gz, -32800, 32800, -1000, 1000);
     mySerial.println(gz);
   }
 
+  // flicker EL wire
+  if (ELOn)
+  {
+    digitalWrite(ELpin, HIGH);
 
-  delay(5);    // wait 10 ms
+    if (millis()%21 == 0)
+    {
+      digitalWrite(ELpin, LOW);
+      delay(random(10, 100));
+      digitalWrite(ELpin, HIGH);
+    }
+  }
 }
 

@@ -17,7 +17,6 @@ class Particle
 
   Particle(float r_, float theta_, float phi_, color col_, float size_, float rotSpeed_)
   {
-    //size = random(0.5, 8);    // set particle size range
     size = size_;
 
     radius = r_;
@@ -26,7 +25,6 @@ class Particle
 
     pos = new PVector(posSphere.x * sin(posSphere.y) * sin(posSphere.z), posSphere.x * cos(posSphere.y), posSphere.x * sin(posSphere.y) * cos(posSphere.z));    // calculate cartesian coords based on spherical coords
 
-    //rotSpeed = random(0.1, 2.0);    // set rotation speed range
     rotSpeed = rotSpeed_;
 
     swirlSpeed = 0;
@@ -37,7 +35,7 @@ class Particle
 
     col = col_;    // set particle colour
 
-    alpha = map(pos.z, -300, 300, 255, 50);    // more distant particles are more faint
+    alpha = 255;    // set temporary alpha value
   }
 
 
@@ -51,7 +49,7 @@ class Particle
     vel.div(tranSpeed_);    // adjust transition speed
   }
 
-  void goTo(float tranSpeed_, float r_, float theta_, float rotSpeed_, float swirlSpeed_)    // set new particle destination and transition speed
+  void goTo(float tranSpeed_, float r_, float theta_, float rotSpeed_, float swirlSpeed_)    // set new particle destination, transition speed, rotation speed, swirl speed
   {
     swirlSpeed = swirlSpeed_;
 
@@ -61,7 +59,7 @@ class Particle
   }
 
 
-  void update()    // update particle locations and draw particles
+  void update()    // update particle location
   {
     if (PVector.dist(dest, posSphere) < 0.01)    // if particle has arrived at destination
     {
@@ -73,7 +71,7 @@ class Particle
   }
 
 
-  void move(boolean gyroOn_, float somoVal_, float camXmod_)
+  void move(boolean gyroOn_, float somoVal_, float camXmod_, boolean radiusOn_)    // rotate particle
   {
     posSphere.z += radians(rotSpeed);    // rotate current position
     dest.z += radians(rotSpeed);    // rotate destination
@@ -91,30 +89,33 @@ class Particle
       dest.z += radians(somoVal_);
 
       // SoMo influence: radius
-      float radMod = random(0.5, 3);
-      posSphere.x += abs(somoVal_ * radMod);
-      dest.x += abs(somoVal_ * radMod);
-
-      // keep radius shrinking to limit
-      if (posSphere.x > radius)
+      if (radiusOn_)
       {
-        posSphere.x -= 4;
-        dest.x -= 4;
+        float radMod = random(3);    // random radial growth factor
+
+        // increase radius
+        posSphere.x += abs(somoVal_ * radMod);
+        dest.x += abs(somoVal_ * radMod);
+
+        // keep radius shrinking towards lower limit
+        float shrinkFactor = map(posSphere.x, radius, 2*radius, 0, 10);
+        posSphere.x -= shrinkFactor;
+        dest.x -= shrinkFactor;
       }
     }
   }
 
 
-  void display(boolean fading_)
+  void display(boolean fading_)    // display particle
   {
     pos.set(posSphere.x * sin(posSphere.y) * sin(posSphere.z), posSphere.x * cos(posSphere.y), posSphere.x * sin(posSphere.y) * cos(posSphere.z));    // calculate cartesian coords based on spherical coords
 
     strokeWeight(size);    // set particle size /
 
     if (fading_)
-      alpha -= 0.5;
+      alpha -= 0.5;    // fade to black if fading enabled
     else
-      alpha = map(pos.z, 200, -300, 255, 20);    // calculate particle transparency based on its distance
+      alpha = map(pos.z, 200, -300, 255, 30);    // calculate particle transparency based on its distance
 
     stroke(col, alpha);    // set particle colour and transparency
 

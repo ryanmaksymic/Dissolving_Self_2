@@ -33,7 +33,10 @@ void keyPressed()
   case '4':    // shell mode
     mode = '4';
     println("Mode 4: Shell");
-    //radius1 = radius2;    // increase radius limit - white
+    for (int j = 0; j < numBall; j++)
+    {
+      part1[j].swirlSpeed = 0;    // stop group 1 swirl motion
+    }
     break;
 
   case '5':    // ring mode
@@ -44,33 +47,63 @@ void keyPressed()
   case '6':    // shrink mode
     mode = '6';
     println("Mode 6: Shrink");
+    //myPort.write('g');    // turn gyroscope off
+    //gyroOn = false;
+    radiusOn = false;
+    println("Gyroscope: OFF");
     break;
 
   case '7':    // end mode
     mode = '7';
     println("Mode 7: End");
-    fading = true;
+    fading = true;    // begin fading to black
+    break;
+
+
+  case 'r':    // toggle gyro-affected radius
+    radiusOn = !radiusOn;
+    println("Gyro-affected radius " + radiusOn);
     break;
 
 
     // SoMo commands
-  case 'g':    // turn gyroscope on
-    myPort.write('g');
+  case 'G':    // turn gyroscope on
+    myPort.write('G');
     gyroOn = true;
     println("Gyroscope: ON");
     break;
-  case 'f':    // turn gyroscope off
-    myPort.write('f');
+  case 'g':    // turn gyroscope off
+    myPort.write('g');
     gyroOn = false;
     println("Gyroscope: OFF");
     break;
-  case 'h':    // turn EL wire on
-    myPort.write('h');
+  case 'E':    // turn EL wire on
+    myPort.write('E');
     println("EL wire: ON");
     break;
-  case 'l':    // turn EL wire off
-    myPort.write('l');
+  case 'e':    // turn EL wire off
+    myPort.write('e');
     println("EL wire: OFF");
+    break;
+  case 'f':    // flicker EL wire
+    myPort.write('f');
+    println("EL wire: FLICKER");
+    break;
+
+
+    // images
+  case 'Q':    // quote 1
+    quote1On = !quote1On;
+    println("Quote 1: " + quote1On);
+    break;
+  case 'q':    // quote 2
+    quote2On = !quote2On;
+    println("Quote 2: " + quote2On);
+    break;
+  case 'c':    // credits
+    creditsAlpha = 0;
+    creditsOn = !creditsOn;
+    println("Credits: " + creditsOn);
     break;
   }
 
@@ -101,7 +134,7 @@ void serialEvent(Serial myPort)
   {
     inString = trim(inString);    // trim off any whitespace
 
-    somoVal = float(inString);
+    somoVal = float(inString);    // convert to float
   }
 }
 
